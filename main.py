@@ -317,7 +317,7 @@ async def start_all():
     # 1. Сначала поднимаем общий веб-сервер
     await start_webserver()
     
-    # 2. Получаем токены из .env файла или системных переменных
+    # 2. Получаем токены из системных переменных
     token1 = os.getenv("BOT_TOKEN_1")
     token2 = os.getenv("BOT_TOKEN_2")
     token3 = os.getenv("BOT_TOKEN_3")
@@ -330,17 +330,24 @@ async def start_all():
         print("[Ошибка] В настройках отсутствуют токены! Проверьте переменные BOT_TOKEN_1, BOT_TOKEN_2, BOT_TOKEN_3.")
         return
 
-    # 3. Объединяем асинхронные задачи ботов в один бесконечный цикл
-    print("[Старт] Подключение ботов к Discord...")
-    await asyncio.gather(
-        bot1.start(t1),
-        bot2.start(t2),
-        bot3.start(t3)
-    )
+    print("[Старт] Подключение ботов к Discord с безопасными задержками...")
+    
+    # Запускаем ботов по очереди с паузой, чтобы Discord / Cloudflare не выдавал ошибку 429
+    try:
+        asyncio.create_task(bot1.start(t1))
+        await asyncio.sleep(5) # Ждем 5 секунд перед запуском второго бота
+        
+        asyncio.create_task(bot2.start(t2))
+        await asyncio.sleep(5) # Ждем еще 5 секунд перед запуском третьего бота
+        
+        await bot3.start(t3)
+    except Exception as e:
+        print(f"[Критическая ошибка при работе ботов]: {e}")
 
 if __name__ == "__main__":
     try:
         asyncio.run(start_all())
     except KeyboardInterrupt:
         print("Работа всех ботов успешно остановлена.")
+
 
