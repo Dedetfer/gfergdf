@@ -17,7 +17,12 @@ async def start_webserver():
     app.router.add_get('/', handle)
     runner = web.AppRunner(app)
     await runner.setup()
+    
+    # Render автоматически передает нужный порт в переменную PORT.
+    # Если переменной нет, ставится дефолтный 10000.
     port = int(os.getenv("PORT", 10000))
+    
+    # Важно: биндимся строго на 0.0.0.0 и порт из переменной окружения
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
     print(f"[Успешно] Веб-сервер мониторинга запущен на порту {port}")
